@@ -66,10 +66,11 @@ internal static class Program
             if (window != IntPtr.Zero && Caption(window) != expectedDialog)
                 Environment.FailFast("Unexpected dialog: " + Caption(window) + " — " + Caption(GetDlgItem(window, 65535)));
         };
-        watchdog.Start();
+
         Console.WriteLine("Initializing screenshot databases.");
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
+        watchdog.Start();
         string Connection(string db) => new SqlConnectionStringBuilder
         {
             DataSource = @"(localdb)\" + args[0], InitialCatalog = db == "master" ? db : args[0] + "_" + db, IntegratedSecurity = true, TrustServerCertificate = true
