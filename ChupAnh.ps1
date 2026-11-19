@@ -13,6 +13,8 @@ try {
     $created = $true
     dotnet run --project tools/ChupAnh/ChupAnh.csproj -c Release -- $instance
     if ($LASTEXITCODE -ne 0) { throw 'Screenshot run failed.' }
+    $screens = @(Get-ChildItem -Path 'images/*/*.png' -File)
+    if ($screens.Count -ne 15) { throw "Expected 15 screenshots, found $($screens.Count)." }
     Write-Host '15 PNG saved to images.'
 }
 finally {
