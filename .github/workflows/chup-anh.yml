@@ -1,0 +1,40 @@
+name: Chụp 15 màn hình WinForms
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '**/*.cs'
+      - '**/*.csproj'
+      - 'Database/ScriptDB.sql'
+      - 'ChupAnh.ps1'
+      - '.github/workflows/chup-anh.yml'
+permissions:
+  contents: write
+jobs:
+  chup-anh:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: ./ChupAnh.ps1
+        shell: pwsh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Anh-WinForms
+          path: images/*/*.png
+          if-no-files-found: error
+      - name: Cập nhật ảnh trong README
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- ':(glob)images/*/*.png'
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { exit 0 }
+          git commit -m "Cập nhật ảnh chạy thực tế của ba bài WinForms"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          git push

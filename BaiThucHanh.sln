@@ -1,0 +1,28 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectTaskManager", "ProjectTaskManager\ProjectTaskManager.csproj", "{97F92CBE-3F76-4C1D-A6C7-1B6F4309E2A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GarageManager", "GarageManager\GarageManager.csproj", "{3CB869BC-91A1-4D36-B764-44E81C7E4548}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KaraokeManager", "KaraokeManager\KaraokeManager.csproj", "{0315783F-B112-4CC0-824A-E16A902B43F3}"
+EndProject
+Global
+    GlobalSection(SolutionConfigurationPlatforms) = preSolution
+        Debug|Any CPU = Debug|Any CPU
+        Release|Any CPU = Release|Any CPU
+    EndGlobalSection
+    GlobalSection(ProjectConfigurationPlatforms) = postSolution
+        {97F92CBE-3F76-4C1D-A6C7-1B6F4309E2A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {97F92CBE-3F76-4C1D-A6C7-1B6F4309E2A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {97F92CBE-3F76-4C1D-A6C7-1B6F4309E2A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {97F92CBE-3F76-4C1D-A6C7-1B6F4309E2A0}.Release|Any CPU.Build.0 = Release|Any CPU
+        {3CB869BC-91A1-4D36-B764-44E81C7E4548}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {3CB869BC-91A1-4D36-B764-44E81C7E4548}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {3CB869BC-91A1-4D36-B764-44E81C7E4548}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {3CB869BC-91A1-4D36-B764-44E81C7E4548}.Release|Any CPU.Build.0 = Release|Any CPU
+        {0315783F-B112-4CC0-824A-E16A902B43F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {0315783F-B112-4CC0-824A-E16A902B43F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {0315783F-B112-4CC0-824A-E16A902B43F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {0315783F-B112-4CC0-824A-E16A902B43F3}.Release|Any CPU.Build.0 = Release|Any CPU
+    EndGlobalSection
+EndGlobal
