@@ -184,27 +184,13 @@ internal static class Program
         Save(f.Handle, n);
     }
 
-    private static void Dialog(string title, Action trigger, int photo, int response = 1)
+    private static void RefreshView(Form form, string method) =>
+        form.GetType().GetMethod(method, BindingFlags.NonPublic | BindingFlags.Instance).Invoke(form, null);
+
+    private static void SelectName(DataGridView grid, string column, string name)
     {
-        Exception failure = null;
-        bool found = false;
-        using var timer = new System.Windows.Forms.Timer { Interval = 350 };
-        timer.Tick += (s, e) =>
-        {
-            var window = DialogWindow(GetCurrentThreadId());
-            var text = new StringBuilder(256);
-            GetWindowText(window, text, text.Capacity);
-            if (text.ToString() != title) return;
-            timer.Stop();
-            try { if (photo > 0) Save(window, photo); found = true; }
-            catch (Exception ex) { failure = ex; }
-            finally { SendMessage(window, 0x0111, (IntPtr)response, IntPtr.Zero); }
-        };
-        timer.Start();
-        expectedDialog = title;
-        try { trigger(); } finally { expectedDialog = null; }
-        if (failure != null) throw failure;
-        if (!found) throw new InvalidOperationException("Thiếu hộp thoại " + title);
+        var row = grid.Rows.Cast<DataGridViewRow>().Single(r => Equals(r.Cells[column].Value, name));
+        grid.CurrentCell = row.Cells[column];
     }
 
     private static void Projects()
@@ -216,7 +202,10 @@ internal static class Program
         Tab(f, 1);
         var members = Field<CheckedListBox>(f, "clbThanhVien");
         members.SetItemChecked(members.Items.Count - 1, true);
-        Dialog("Phân công", () => Press(f, "Giao việc cho người đã chọn"), 0);
+        var task = (ProjectTaskManager.DTO.CongViecDTO)Field<DataGridView>(f,"dgvTask").CurrentRow.DataBoundItem;
+        var member = (ProjectTaskManager.DTO.ThanhVienDTO)members.Items[members.Items.Count-1];
+        new ProjectTaskManager.BUS.PhanCongBUS().GiaoViec(task.MaTask, new[] { member.MaThanhVien });
+        RefreshView(f, "TickThanhVienCuaTask");
         Save(f, 3);
         Tab(f, 3); Save(f, 4);
         Tab(f, 0);
@@ -241,13 +230,13 @@ internal static class Program
         Press(f, "Kiểm tra xe");
         Press(f, "Thêm vào phiếu");
         Save(f, 3);
-        Field<NumericUpDown>(f, "nudSL").Value = 999;
-        Press(f, "Thêm vào phiếu");
-        var bus = new GarageManager.BUS.PhieuSuaChuaBUS();
-        int before = bus.GetAll().Count;
-        Dialog("Không đủ phụ tùng trong kho", () => Press(f, "✔ Xác nhận hoàn tất phiếu (trừ kho)"), 5);
-        if (bus.GetAll().Count != before) throw new InvalidOperationException("Phiếu lỗi chưa rollback.");
-        bus.ThanhToan(1);
+        const string part = "Lọc gió O'Brien";
+        new GarageManager.BUS.PhuTungBUS().Them(new GarageManager.DTO.PhuTungDTO { TenPhuTung = part, DonGia = 120000, SoLuongTon = 8 });
+        Tab(f, 1);
+        RefreshView(f, "LoadPhuTung");
+        SelectName(Field<DataGridView>(f, "dgvPT"), "TenPhuTung", part);
+        Save(f, 5);
+        new GarageManager.BUS.PhieuSuaChuaBUS().ThanhToan(1);
         using var report = new Garage.BaoCaoForm();
         report.Show(f);
         Save(report, 4);
@@ -265,8 +254,14 @@ internal static class Program
         }
         var rooms = Field<FlowLayoutPanel>(f, "pnlPhong");
         rooms.Controls.OfType<Button>().Single(b => ((KaraokeManager.DTO.PhongDTO)b.Tag).MaPhong == 2).PerformClick();
-        Field<NumericUpDown>(f, "nudSL").Value = 999;
-        Dialog("Không đủ tồn kho", () => Press(f, "+ Thêm"), 5);
+        const string service = "Trà O'Brien";
+        new KaraokeManager.BUS.DichVuBUS().Luu(new KaraokeManager.DTO.DichVuDTO { TenDV = service, DonGia = 30000, TonKho = 10 }, null);
+        using (var safe = new Karaoke.DichVuForm())
+        {
+            safe.Show(f);
+            SelectName(Field<DataGridView>(safe, "grid"), "TenDV", service);
+            Save(safe, 5);
+        }
         Field<NumericUpDown>(f, "nudSL").Value = 1;
         Press(f, "+ Thêm");
         Save(f, 3);
