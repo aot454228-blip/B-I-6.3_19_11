@@ -22,7 +22,32 @@ internal static class Program
     private static readonly string output = Path.Combine(Path.GetTempPath(), "WinFormsPhotos-" + Guid.NewGuid().ToString("N"));
 
     [DllImport("user32.dll")] private static extern bool PrintWindow(IntPtr hwnd, IntPtr hdc, uint flags);
-    [DllImport("user32.dll")] private static extern IntPtr GetActiveWindow();
+    private delegate bool Visit(IntPtr w, IntPtr data);
+    [DllImport("user32.dll")] private static extern bool EnumThreadWindows(uint id, Visit visit, IntPtr data);
+    [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassName(IntPtr h, StringBuilder text, int size);
+    [DllImport("user32.dll")] private static extern IntPtr GetDlgItem(IntPtr h, int id);
+    private static string expectedDialog;
+
+    private static IntPtr DialogWindow(uint thread)
+    {
+        IntPtr result = IntPtr.Zero;
+        EnumThreadWindows(thread, (w, unused) => {
+            var cls = new StringBuilder(256);
+            GetClassName(w, cls, cls.Capacity);
+            if (cls.ToString() != "#32770") return true;
+            result = w;
+            return false;
+        }, IntPtr.Zero);
+        return result;
+    }
+
+    private static string Caption(IntPtr w)
+    {
+        var text = new StringBuilder(2048);
+        GetWindowText(w, text, text.Capacity);
+        return text.ToString();
+    }
     [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr hwnd, out RectangleEdges rect);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetWindowText(IntPtr hwnd, StringBuilder text, int size);
     [DllImport("user32.dll")] private static extern IntPtr SendMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam);
@@ -34,6 +59,15 @@ internal static class Program
     {
         if (args.Length != 1 || !Regex.IsMatch(args[0], "^BaiTH_[0-9a-f]{32}$")) throw new ArgumentException("Chạy ChupAnh.ps1 từ thư mục gốc.");
         Application.SetHighDpiMode(HighDpiMode.SystemAware);
+        uint thread = GetCurrentThreadId();
+        using var watchdog = new System.Windows.Forms.Timer { Interval = 2000 };
+        watchdog.Tick += (s,e) => {
+            var window = DialogWindow(thread);
+            if (window != IntPtr.Zero && Caption(window) != expectedDialog)
+                Environment.FailFast("Unexpected dialog: " + Caption(window) + " — " + Caption(GetDlgItem(window, 65535)));
+        };
+        watchdog.Start();
+        Console.WriteLine("Initializing screenshot databases.");
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
         string Connection(string db) => new SqlConnectionStringBuilder
@@ -87,6 +121,7 @@ internal static class Program
     {
         folder = Path.Combine(output, project);
         Directory.CreateDirectory(folder);
+        Console.WriteLine("Opening " + project);
         form.Show();
         form.Activate();
         Application.DoEvents();
@@ -130,6 +165,7 @@ internal static class Program
             for (int x = 0; x < bitmap.Width; x += 4)
                 colors.Add(bitmap.GetPixel(x, y).ToArgb());
         if (colors.Count < 8) throw new InvalidOperationException("Ảnh cửa sổ trống: " + Files[n]);
+        Console.WriteLine("Saving " + folder + "/" + Files[n]);
         bitmap.Save(Path.Combine(folder, Files[n] + ".png"), ImageFormat.Png);
     }
 
@@ -147,7 +183,7 @@ internal static class Program
         using var timer = new System.Windows.Forms.Timer { Interval = 350 };
         timer.Tick += (s, e) =>
         {
-            var window = GetActiveWindow();
+            var window = DialogWindow(GetCurrentThreadId());
             var text = new StringBuilder(256);
             GetWindowText(window, text, text.Capacity);
             if (text.ToString() != title) return;
@@ -157,7 +193,8 @@ internal static class Program
             finally { SendMessage(window, 0x0111, (IntPtr)response, IntPtr.Zero); }
         };
         timer.Start();
-        trigger();
+        expectedDialog = title;
+        try { trigger(); } finally { expectedDialog = null; }
         if (failure != null) throw failure;
         if (!found) throw new InvalidOperationException("Thiếu hộp thoại " + title);
     }
