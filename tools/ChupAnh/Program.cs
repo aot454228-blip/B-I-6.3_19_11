@@ -59,6 +59,10 @@ internal static class Program
     {
         if (args.Length != 1 || !Regex.IsMatch(args[0], "^BaiTH_[0-9a-f]{32}$")) throw new ArgumentException("Chạy ChupAnh.ps1 từ thư mục gốc.");
         Application.SetHighDpiMode(HighDpiMode.SystemAware);
+        using var timeout = new System.Threading.Timer(_ => {
+            Console.Error.WriteLine("Screenshot run timed out after 90 seconds.");
+            Environment.Exit(2);
+        }, null, 90000, System.Threading.Timeout.Infinite);
         uint thread = GetCurrentThreadId();
         using var watchdog = new System.Windows.Forms.Timer { Interval = 2000 };
         watchdog.Tick += (s,e) => {
@@ -85,6 +89,7 @@ internal static class Program
             {
                 if (string.IsNullOrWhiteSpace(batch)) continue;
                 using var command = new SqlCommand(batch, cn);
+                Console.WriteLine("SQL batch " + batch.TrimStart().Split('\n')[0]);
                 command.ExecuteNonQuery();
             }
         }
@@ -148,12 +153,14 @@ internal static class Program
         }
         var button = Find(root) ?? throw new InvalidOperationException("Thiếu nút " + title);
         if (!button.Enabled) throw new InvalidOperationException("Nút chưa sẵn sàng: " + title);
+        Console.WriteLine("Click: " + title);
         button.PerformClick();
     }
 
     private static void Save(IntPtr window, int n)
     {
         if (!GetWindowRect(window, out var r)) throw new InvalidOperationException("Không đọc được cửa sổ.");
+        Console.WriteLine("Drawing " + Files[n]);
         using var bitmap = new Bitmap(r.Right - r.Left, r.Bottom - r.Top);
         using (var g = Graphics.FromImage(bitmap))
         {
